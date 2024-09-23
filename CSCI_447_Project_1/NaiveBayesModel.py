@@ -79,7 +79,7 @@ class NaiveBayesModel:
          print("")
          for Class in self.classes:
              print("Number of examples in class {}: {}".format(Class, self.number_of_examples_in_class[Class]))
-         pass
+              
 #--------------------------------------------------------------------------------------------------------------------------
 
      #Invokes class_probability() and feature_prob_given_class() to implement the Naive Bayes training algorithm
