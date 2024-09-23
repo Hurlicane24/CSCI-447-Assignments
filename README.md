@@ -8,3 +8,5 @@ Assignment 2: Implement K-Nearest-Neighbors, Edited K-Nearest-Neighbors, and K-M
 Assignment 3: Implement a Neural Network. (Not Completed)
 
 Assignment 4: Implement some sort of Reinforcement Learning. (Not Completed)
+
+(PLEASE NOTE THAT ALL PROJECTS WERE COAUTHORED WITH https://github.com/Allingsen)
