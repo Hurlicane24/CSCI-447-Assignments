@@ -29,27 +29,59 @@ class KMeansClustering:
         self.distance_matrix = distance_matrix
         self.categorical = categorical_columns
         self.numerical = numerical_columns
+        self.categorical_indices = []
+        self.numerical_indices = []
+        self.get_categorical_indices()
+        self.get_numerical_indices()
         self.k = k
         self.sigma = 0.1
         self.centroids = []
         self.clusters = []
-        self.features = []
+        self.features = self.fill_features()
 
 #----------------------------------------------------------------------------------------------------------
 
+    #Creates a list of indices that correspond to numerical columns in the training set
+    def get_numerical_indices(self):
+        index = 0
+        for column in self.df_train.columns:
+            if(column in self.numerical):
+                self.numerical_indices.append(index)
+            index += 1 
+
+#----------------------------------------------------------------------------------------------------------
+
+    #Creates a list of indices that correspond to categorical columns in the training set
+    def get_categorical_indices(self):
+        index = 0
+        for column in self.df_train.columns:
+            if(column in self.categorical):
+                self.categorical_indices.append(index)
+            index += 1
+
+#----------------------------------------------------------------------------------------------------------
+
+
     #Creates a list of feature vectors in the training set which are represented as dictionaries
-    def get_features(self):
+    def fill_features(self):
+        features = []
         for i in range(len(self.df_train)):
             feature_vector = []
             for column in self.df_train.columns:
                 if(column != "class" and column != "id" and column != "value"):
                     feature_vector.append(self.df_train.loc[i, column])
-            self.features.append(feature_vector)
-        print(self.features)
-        return(self.features)
+            features.append(feature_vector)
+        return(features)
 
 #----------------------------------------------------------------------------------------------------------
 
+    #Getter method for the feature vectors in the training set
+    def get_features(self):
+        return(self.features)
+    
+#----------------------------------------------------------------------------------------------------------
+
+    #Applies the clustering process until convergence has occurred
     def cluster_data(self):
         converged = False
         first_time = True
@@ -59,13 +91,11 @@ class KMeansClustering:
         for i in range(self.k):
             centroid = random.randint(0, len(self.features) - 1)
             while(self.features[centroid] in self.centroids):
-                print(centroid)
                 centroid = random.randint(0, len(self.features) - 1)
             self.centroids.append(self.features[centroid])
-        print(self.centroids)
+        print("Initial Centroids:", self.centroids)
 
         while(converged == False):
-
             #Fill keys of the dictionaries in self.clusters with the current centroids
             for i in range(len(self.centroids)):
                 cluster_dict = {}
@@ -81,9 +111,8 @@ class KMeansClustering:
                         centroid_distances.append(self.distance_matrix[i][self.features.index(centroid)])
                     index = centroid_distances.index(min(centroid_distances))
                     self.clusters[index][tuple(self.centroids[index])].append(i)
-                print(self.clusters)
+                print("Clusters:", self.clusters)
                 first_time = False
-                converged = True
                 
             #If it's not the first time, use calculate_distance() to get distances and assign vectors to
             #appropriate clusters
@@ -93,22 +122,65 @@ class KMeansClustering:
                     for centroid in self.centroids:
                         centroid_distances.append(self.calculate_distance(self.features[i], centroid))
                     index = centroid_distances.index(min(centroid_distances))
-                    self.clusters[index[tuple(self.centroids[index])]].append(i)
-                print(self.clusters)   
+                    self.clusters[index][tuple(self.centroids[index])].append(i)
+                print("Clusters:", self.clusters)   
 
             #Save old centroids before updating 
-            old_centroids = self.centroids
+            old_centroids = self.centroids.copy()
 
             #Update centroids 
             self.centroids.clear()
+
+            #For each cluster, calculate the new centroid by taking the mean of all of the numerical features and
+            #the mode of all of the categorical features
             for cluster in self.clusters:
-                pass
+                total_vector_mean = []
+                mode_vector = []
 
+                #Mean for numerical features
+                for i in range(len(self.features[0])):
+                    total_vector_mean.append(0)
 
+                index = 0
+                for column in self.numerical:
+                    for i in range(len(list(cluster.values())[0])):
+                        total_vector_mean[self.numerical_indices[index]] += self.df_train.loc[list(cluster.values())[0][i], column]
+                    index += 1
+                
+                centroid_vector = total_vector_mean
+                for i in range(len(total_vector_mean)):
+                    centroid_vector[i] = total_vector_mean[i]/len(list(cluster.values())[0])
+
+                #Mode for categorical features
+                index = 0
+                for column in self.categorical:
+                    possible_values = {}
+                    for i in range(len(list(cluster.values())[0])):
+                        value = self.df_train.loc[list(cluster.values())[0][i], column]
+                        if(value not in possible_values):
+                            possible_values[value] = 0
+                        possible_values[value] += 1
+                    mode = max(possible_values, key = lambda x: possible_values[x])
+                    mode_vector.append(mode)
+                
+                for i in range(len(mode_vector)):
+                    centroid_vector[self.categorical_indices[i]] = mode_vector[i]
+
+                self.centroids.append(centroid_vector)  
+            print("New Centroids: {}".format(self.centroids)) 
+
+            if(old_centroids == self.centroids):
+                converged = True 
+                print("centroids have converged, clustering complete")
+
+            else:
+                print("Centroids have not converged... recalculating centroids")
+                self.clusters.clear()
 
 #----------------------------------------------------------------------------------------------------------
 
     def classify_one(self):
+        #Employ a plurality vote to determine class of query point
         pass
 
 #----------------------------------------------------------------------------------------------------------
@@ -138,18 +210,13 @@ class KMeansClustering:
         
 #----------------------------------------------------------------------------------------------------------
 
-    #Calculates the Euclidean distance between to feature vectors. This function is only used for numerical columns
+    #Calculates the Euclidean distance between two feature vectors. This function is only used for numerical columns
     def euclidean_distance(self, vector1, vector2):
-        numerical_indices = []
-        for i in range(len(self.df_train.columns)):
-            if(self.df_train.columns[i] in self.numerical):
-                numerical_indices.append(i)
-
         sum_of_squared_differences = 0
         index = 0
         for column in self.numerical:
-            val1 = vector1[numerical_indices[index]]
-            val2 = vector2[numerical_indices[index]]
+            val1 = vector1[self.numerical_indices[index]]
+            val2 = vector2[self.numerical_indices[index]]
             squared_difference = pow((val2 - val1), 2)
             sum_of_squared_differences += squared_difference
             index += 1
@@ -159,49 +226,23 @@ class KMeansClustering:
 
 #----------------------------------------------------------------------------------------------------------
 
-    #Calculates the value difference metric between two feature vectors. This function is only used for categorical
-    #columns
-    def value_difference_metric(self, vector1, vector2):
+    #Calculates the value difference metric between two feature vectors if the task is classification. Calculates 
+    #the hamming distance if the task is regression. This function is only used for categorical columns
+    def categorical_distance(self, vector1, vector2):
     
-        #If the task is regression, use the value column for VDM (NOT SURE IF THIS IS CORRECT)
+        #If the task is regression, use hamming distance
         if("value" in self.df_train.columns):
-            value_difference_metric = 0
+            hamming_distance = 0
+            index = 0
             for column in self.categorical:
-                val1 = self.df_train.loc[vector1, column]
-                val2 = self.df_train.loc[vector2, column]
-
-                sum_of_targets1 = 0
-                sum_of_targets2 = 0
-                mean1 = 0
-                mean2 = 0
-                num_of_instances1 = 0
-                num_of_instances2 = 0
-
-                #Need to change
-                for i in range(len(self.df_train)):
-                    if(self.df_train.loc[i, column] == val1):
-                        sum_of_targets1 += self.df_train.loc[i, "value"]
-                        num_of_instances1 += 1
-                mean1 = sum_of_targets1/num_of_instances1
-
-                for i in range(len(self.df_train)):
-                    if(self.df_train.loc[i, column] == val2):
-                        sum_of_targets2 += self.df_train.loc[i, "value"]
-                        num_of_instances2 += 1
-                mean2 = sum_of_targets2/num_of_instances1
-
-                value_difference_metric += abs(mean1 - mean2)
-            
-            return(value_difference_metric)
-            
-
-        #If the task is classification, use the class column for VDM
+                val1 = vector1[self.categorical_indices[index]]
+                val2 = vector2[self.categorical_indices[index]]
+                if(val1 != val2):
+                    hamming_distance += 1
+            return(hamming_distance)
+       
+        #If the task is classification, calculate the VDM
         else:
-            
-            categorical_indices = []
-            for i in range(len(self.df_train.columns)):
-                if(self.df_train.columns[i] in self.categorical):
-                    categorical_indices.append(i)
 
             #Obtain list of classes
             classes = []
@@ -218,9 +259,8 @@ class KMeansClustering:
             for column in self.categorical:
                 
                 #Initialize variables to store steps of calculation
-                val1 = vector1[categorical_indices[index]]
-                val2 = vector2[categorical_indices[index]]
-                print("Val1: {}, Val2: {}".format(val1, val2))
+                val1 = vector1[self.categorical_indices[index]]
+                val2 = vector2[self.categorical_indices[index]]
                 C_i1 = 0
                 C_i2 = 0
                 C_i_a1 = 0
@@ -263,7 +303,7 @@ class KMeansClustering:
 
     #Calculates the total distance between vector1 and vector2 using euclidean_distance() and value_difference_metric()
     def calculate_distance(self, vector1, vector2):
-        total_distance = ((len(self.numerical)/len(self.features))*self.euclidean_distance(vector1, vector2)) + ((len(self.categorical)/len(self.features))*self.value_difference_metric(vector1, vector2))
+        total_distance = ((len(self.numerical)/len(self.features))*self.euclidean_distance(vector1, vector2)) + ((len(self.categorical)/len(self.features))*self.categorical_distance(vector1, vector2))
         return(total_distance)
     
 #----------------------------------------------------------------------------------------------------------
@@ -282,6 +322,15 @@ data = {
 
 distance_matrix = np.zeros((5,5))
 skip = []
+
+
+df_train = pd.DataFrame(data)
+df_test = pd.DataFrame()
+numerical = ["Temperature", "Precipitation", "wind speed"]
+categorical = ["color", "weather"]
+k = 2
+clustering = KMeansClustering(df_train, df_test, distance_matrix, categorical, numerical, k)
+
 for i in range(5):
     for j in range(5):
         if(i == j):
@@ -291,19 +340,11 @@ for i in range(5):
             pass
 
         else:
-            distance = random.uniform(0, 15)
+            distance = clustering.calculate_distance(clustering.get_features()[i], clustering.get_features()[j])
             distance_matrix[i][j] = distance
             distance_matrix[j][i] = distance
-            skip.append((j,i))
 
-df_train = pd.DataFrame(data)
-df_test = pd.DataFrame()
-numerical = ["Temperature", "Precipitation", "wind speed"]
-categorical = ["color", "weather"]
-k = 2
-clustering = KMeansClustering(df_train, df_test, distance_matrix, categorical, numerical, k)
-features = clustering.get_features()
 print(distance_matrix)
 clustering.cluster_data()
-print("Euclidean Distance:", clustering.euclidean_distance(features[0], features[1]))
-print("Value Difference Metric:", clustering.value_difference_metric(features[0], features[1]))
+
+#ALL COMPLETED METHODS ARE CURRENTLY FUNCTIONING PROPERLY
