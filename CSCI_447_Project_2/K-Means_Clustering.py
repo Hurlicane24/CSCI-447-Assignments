@@ -6,15 +6,23 @@
 
 #distance_matrix is a 2-D numpy array that holds the distances between each pair of training examples 
 
-#k is an integer representing the number of clusters. This is a hyperparameter that will be tuned
+#categorical is a list that holds the names of the categorical columns in the dataset
 
-#sigma is a float representing the bandwidth of the Guassian kernel. This is a hyperparameter that will be tuned
+#numerical is a list that holds the names of the numerical columns in the dataset
+
+#categorical_indices is a list that holds the indices of the categorical columns in self.df_train
+
+#numerical_indices is a list that holds the indices of the numerical columns in self.df_train
+
+#k is an integer representing the number of clusters
 
 #centroids is a list holding the current centroids of the dataset. This is updated by cluster_data()
 
-#clusters is a list that will hold dictionaries mapping cluster IDs to the examples contained in the cluster
+#clusters is a list that will hold dictionaries mapping cluster centroids to the examples contained in the cluster
 
 #features is a list that will hold the feature vectors in the training set
+
+#features_to_IDs is a dictionary that maps feature vectors to their row index in self.df_train
 #----------------------------------------------------------------------------------------------------------
 
 import pandas as pd
@@ -34,10 +42,10 @@ class KMeansClustering:
         self.get_categorical_indices()
         self.get_numerical_indices()
         self.k = k
-        self.sigma = 0.1
         self.centroids = []
         self.clusters = []
         self.features = self.fill_features()
+        self.features_to_IDs = self.fill_features_to_IDs()
 
 #----------------------------------------------------------------------------------------------------------
 
@@ -61,7 +69,6 @@ class KMeansClustering:
 
 #----------------------------------------------------------------------------------------------------------
 
-
     #Creates a list of feature vectors in the training set which are represented as dictionaries
     def fill_features(self):
         features = []
@@ -73,6 +80,15 @@ class KMeansClustering:
             features.append(feature_vector)
         return(features)
 
+#----------------------------------------------------------------------------------------------------------
+
+    #Returns a dictionary mapping feature vectors to their row in self.df_train
+    def fill_features_to_IDs(self):
+        features_to_IDs = {}
+        for i in range(len(self.features)):
+            features_to_IDs[tuple(self.features[i])] = i
+        return(features_to_IDs)
+    
 #----------------------------------------------------------------------------------------------------------
 
     #Getter method for the feature vectors in the training set
@@ -176,41 +192,12 @@ class KMeansClustering:
             else:
                 print("Centroids have not converged... recalculating centroids")
                 self.clusters.clear()
-
-#----------------------------------------------------------------------------------------------------------
-
-    def classify_one(self):
-        #Employ a plurality vote to determine class of query point
-        pass
-
-#----------------------------------------------------------------------------------------------------------
-
-    def classify_all(self):
-        pass
-
-#----------------------------------------------------------------------------------------------------------
-    
-    def regress_one(self):
-        pass
-
-#----------------------------------------------------------------------------------------------------------
-
-    def regress_all(self):
-        pass
-
-#----------------------------------------------------------------------------------------------------------
-
-    def tune_hypers(self):
-        pass
-
-#----------------------------------------------------------------------------------------------------------
-
-    def reset_hypers(self):
-        pass
         
+        return(self.clusters)
+
 #----------------------------------------------------------------------------------------------------------
 
-    #Calculates the Euclidean distance between two feature vectors. This function is only used for numerical columns
+    #Calculates the Euclidean distance between two feature vectors. This method is only used for numerical columns
     def euclidean_distance(self, vector1, vector2):
         sum_of_squared_differences = 0
         index = 0
@@ -227,7 +214,7 @@ class KMeansClustering:
 #----------------------------------------------------------------------------------------------------------
 
     #Calculates the value difference metric between two feature vectors if the task is classification. Calculates 
-    #the hamming distance if the task is regression. This function is only used for categorical columns
+    #the hamming distance if the task is regression. This method is only used for categorical columns
     def categorical_distance(self, vector1, vector2):
     
         #If the task is regression, use hamming distance
@@ -301,14 +288,14 @@ class KMeansClustering:
             
 #----------------------------------------------------------------------------------------------------------
 
-    #Calculates the total distance between vector1 and vector2 using euclidean_distance() and value_difference_metric()
+    #Calculates the total distance between vector1 and vector2 using euclidean_distance() and categorical_distance()
     def calculate_distance(self, vector1, vector2):
         total_distance = ((len(self.numerical)/len(self.features))*self.euclidean_distance(vector1, vector2)) + ((len(self.categorical)/len(self.features))*self.categorical_distance(vector1, vector2))
         return(total_distance)
     
 #----------------------------------------------------------------------------------------------------------
 
-#This is purely for bug testing
+#This is a trial dataset for testing this class
 data = {
     #numerical columns
     'Temperature': [78.5, 97.1, 99.002, 88.5, 66.907],
@@ -346,5 +333,3 @@ for i in range(5):
 
 print(distance_matrix)
 clustering.cluster_data()
-
-#ALL COMPLETED METHODS ARE CURRENTLY FUNCTIONING PROPERLY
