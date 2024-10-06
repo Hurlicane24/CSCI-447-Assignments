@@ -46,6 +46,7 @@ class KMeansClustering:
         self.clusters = []
         self.features = self.fill_features()
         self.features_to_IDs = self.fill_features_to_IDs()
+        self.centroids_to_class_or_val = {}
 
 #----------------------------------------------------------------------------------------------------------
 
@@ -193,7 +194,33 @@ class KMeansClustering:
                 print("Centroids have not converged... recalculating centroids")
                 self.clusters.clear()
         
-        return(self.clusters)
+        #Assign each of the final centroids to a class or value using a plurality vote
+        if("class" in self.df_train.columns):
+            class_freq = {}
+            for cluster in self.clusters:
+                for feature_vector in list(cluster.values())[0]:
+                    Class = self.df_train.loc[feature_vector, "class"]
+                    if(Class not in class_freq):
+                        class_freq[Class] = 0
+                    class_freq[Class] += 1
+                mode = max(class_freq, key = lambda x: class_freq[x])
+                self.centroids_to_class_or_val[list(cluster.keys())[0]] = mode
+            print("Centroids to classes:", self.centroids_to_class_or_val)
+
+        else:
+            regress_list = []
+            for cluster in self.clusters:
+                for feature_vector in list(cluster.values())[0]:
+                    regress_list.append(self.df_train.loc[feature_vector, "value"])
+                summation = 0
+                for value in regress_list:
+                    summation += value
+                mean = summation/len(regress_list)
+                self.centroids_to_class_or_val[list(cluster.keys())[0]] = mean
+            print("Centroids to values:", self.centroids_to_class_or_val)
+        
+        return(self.centroids_to_class_or_val)
+
 
 #----------------------------------------------------------------------------------------------------------
 
@@ -226,6 +253,8 @@ class KMeansClustering:
                 val2 = vector2[self.categorical_indices[index]]
                 if(val1 != val2):
                     hamming_distance += 1
+                index += 1
+            print("HAMMING DISTANCE BETWEEN {} and {}:".format(vector1, vector2), hamming_distance)
             return(hamming_distance)
        
         #If the task is classification, calculate the VDM
@@ -304,7 +333,7 @@ data = {
     #categorical columns
     'color': ["red", "blue", "blue", "red", "red"],
     'weather': ["sunny", "overcast", "sunny", "sunny", "overcast"],
-    'class': [1, 2, 2, 1, 2]
+    'value': [1.3, 2.6, 2.9, 5.98, 0.7]
 }
 
 distance_matrix = np.zeros((5,5))
