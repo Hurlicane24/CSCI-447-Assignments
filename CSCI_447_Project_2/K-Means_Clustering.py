@@ -196,8 +196,8 @@ class KMeansClustering:
         
         #Assign each of the final centroids to a class or value using a plurality vote
         if("class" in self.df_train.columns):
-            class_freq = {}
             for cluster in self.clusters:
+                class_freq = {}
                 for feature_vector in list(cluster.values())[0]:
                     Class = self.df_train.loc[feature_vector, "class"]
                     if(Class not in class_freq):
@@ -208,8 +208,8 @@ class KMeansClustering:
             print("Centroids to classes:", self.centroids_to_class_or_val)
 
         else:
-            regress_list = []
             for cluster in self.clusters:
+                regress_list = []
                 for feature_vector in list(cluster.values())[0]:
                     regress_list.append(self.df_train.loc[feature_vector, "value"])
                 summation = 0
@@ -254,7 +254,7 @@ class KMeansClustering:
                 if(val1 != val2):
                     hamming_distance += 1
                 index += 1
-            print("HAMMING DISTANCE BETWEEN {} and {}:".format(vector1, vector2), hamming_distance)
+            #print("HAMMING DISTANCE BETWEEN {} and {}:".format(vector1, vector2), hamming_distance)
             return(hamming_distance)
        
         #If the task is classification, calculate the VDM
@@ -333,7 +333,7 @@ data = {
     #categorical columns
     'color': ["red", "blue", "blue", "red", "red"],
     'weather': ["sunny", "overcast", "sunny", "sunny", "overcast"],
-    'value': [1.3, 2.6, 2.9, 5.98, 0.7]
+    'class': [1, 2, 2, 1, 2]
 }
 
 distance_matrix = np.zeros((5,5))
