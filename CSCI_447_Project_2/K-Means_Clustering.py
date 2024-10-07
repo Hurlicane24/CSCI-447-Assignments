@@ -23,6 +23,8 @@
 #features is a list that will hold the feature vectors in the training set
 
 #features_to_IDs is a dictionary that maps feature vectors to their row index in self.df_train
+
+#centroids_to_class_or_val is a dictionary that maps the final centroids to a class or value
 #----------------------------------------------------------------------------------------------------------
 
 import pandas as pd
