@@ -7,6 +7,6 @@ Assignment 2: Implement K-Nearest-Neighbors, Edited K-Nearest-Neighbors, and K-M
 
 Assignment 3: Implement a Neural Network. (Still need to add)
 
-Assignment 4: Implement Genetic Algorithm, Differential Evolution, and Particle Swarm Optimization (Still need to add)
+Assignment 4: Implement Genetic Algorithm, Differential Evolution, and Particle Swarm Optimization. (Still need to add)
 
 (PLEASE NOTE THAT ALL PROJECTS WERE COAUTHORED WITH https://github.com/Allingsen)
