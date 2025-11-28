@@ -5,8 +5,8 @@ Assignment 1: Implement the Naive Bayes learning algorithm using Laplace smoothi
 
 Assignment 2: Implement K-Nearest-Neighbors, Edited K-Nearest-Neighbors, and K-Means Clustering. (Not Completed)
 
-Assignment 3: Implement a Neural Network. (Not Completed)
+Assignment 3: Implement a Neural Network. (Still need to add)
 
-Assignment 4: Implement some sort of Reinforcement Learning. (Not Completed)
+Assignment 4: Implement Genetic Algorithm, Differential Evolution, and Particle Swarm Optimization (Still need to add)
 
 (PLEASE NOTE THAT ALL PROJECTS WERE COAUTHORED WITH https://github.com/Allingsen)
